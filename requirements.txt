@@ -1,10 +1,9 @@
 python-dotenv==1.0.1
 requests==2.32.3
-google-auth==2.38.0
-google-auth-oauthlib==1.2.1
-google-cloud-speech==2.31.1
 deepl==1.21.1
 elevenlabs==1.54.0
 pydub==0.25.1
 moviepy==2.1.2
 ffmpeg-python==0.2.0
+deepgram-sdk==3.10.1
+
