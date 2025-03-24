@@ -1,19 +1,24 @@
 import os
 from moviepy import VideoFileClip
+import subprocess
+import requests
+from dotenv import load_dotenv
+import json
 
+load_dotenv()
+DEEP_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 
-def extract_audio(video_path, audio_path):
-    try:
-        video = VideoFileClip(video_path)
-        audio = video.audio
-        if audio:
-            audio = audio.set_channels(1)
-            audio.write_audiofile(audio_path, codec="pcm_s16le", fps=16000, verbose=False, logger=None)
-            video.close()
-            return True
-        else:
-            print("Error: No audio track found in the video.")
-            return False
-    except Exception as e:
-        print(f"Error extracting audio: {e}")
-        return False
+def transcribe_audio(audio_path, output_json_path):
+    url = "https://api.deepgram.com/v1/listen"
+    headers = {"Authorization": f"Token {DEEP_API_KEY}", "Content-Type": "audio/wav"}
+
+    with open(audio_path, "rb") as audio_file:
+        response = requests.post(url, headers=headers, data=audio_file)
+
+    response_json = response.json()
+
+    with open(output_json_path, "w", encoding="utf-8") as json_file:
+        json.dump(response_json, json_file, indent=4)
+
+    return response_json
+
