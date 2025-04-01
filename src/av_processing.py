@@ -37,4 +37,16 @@ def get_video_duration(video_path):
         print(f"Error getting video duration: {e}")
         return None
 
+def get_audio_duration(audio_path):
+    try:
+        command = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", audio_path]
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        duration = float(result.stdout)
+        print(duration)
+        return duration
+    except subprocess.CalledProcessError as e:
+        print(f"Error getting audio duration: {e}")
+        return None
+
+
 
