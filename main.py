@@ -37,11 +37,13 @@ with open("data/translations/translated_transcript.txt", "r") as file:
 
 text_to_speech(to_generate)
 
-speeed_factor = get_video_duration(video_path) / get_audio_duration(audio_path)
+
+speeed_factor = get_audio_duration(audio_path) / get_video_duration(video_path)
 
 adjust_audio_speed(audio_path, adjusted_audio_path,speeed_factor)
 
 replace_audio(video_path, adjusted_audio_path, output_path)
+
 
 
 if __name__ == "__main__":
