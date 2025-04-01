@@ -26,4 +26,15 @@ def replace_audio(video_path, audio_path, output_path):
         return False
 
 
+def get_video_duration(video_path):
+    try:
+        video = VideoFileClip(video_path)
+        video_duration = video.duration
+        video.close()
+        print(video_duration)
+        return video_duration
+    except Exception as e:
+        print(f"Error getting video duration: {e}")
+        return None
+
 
