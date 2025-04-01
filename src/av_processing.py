@@ -49,4 +49,12 @@ def get_audio_duration(audio_path):
         return None
 
 
-
+def adjust_audio_speed(input_audio_path, output_adjusted_audio_path, speed_factor):
+    try:
+        command = [
+            "ffmpeg", "-i", input_audio_path, "-filter:a", f"atempo={speed_factor}", "-vn", "-codec:a", "libmp3lame" ,output_adjusted_audio_path
+        ]
+        subprocess.run(command, check=True)
+        print(f"Audio speed adjusted and saved to {output_adjusted_audio_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error adjusting audio speed: {e}")
