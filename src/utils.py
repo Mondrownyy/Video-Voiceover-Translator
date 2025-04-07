@@ -9,3 +9,5 @@ with open("../data/transcripts/transcript.txt", "x") as file:
     file.write(transcript)
 
 print(transcript)
+
+

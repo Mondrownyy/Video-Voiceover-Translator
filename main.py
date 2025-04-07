@@ -17,6 +17,10 @@ video_path = "data/input/Sample_MP4_1.mp4"
 audio_path = "data/generated_audio/3041ddec-12de-4b7c-8654-b4dc1db1dbc5.mp3"
 output_path = "data/output/output_video.mp4"
 adjusted_audio_path = "data/adjusted_audio/adjusted_audio.mp3"
+transcript_path = "data/transcripts/transcript.txt"
+translation_path = "data/translations/translated_transcript.txt"
+
+target_lang = "ES"
 
 success = extract_audio(video_file, audio_output)
 
