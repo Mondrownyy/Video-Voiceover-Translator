@@ -1,6 +1,7 @@
 # Video-Voiceover-Translator
 
 A powerful application that automatically translates video content into different languages by extracting audio, transcribing speech, translating text, generating voiceovers, and creating a new video with the translated audio.
+![Movie-transl](https://github.com/user-attachments/assets/b7ae2f3d-21c7-45fb-b141-636624c095e6)
 
 ## Features ✨
 
