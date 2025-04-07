@@ -23,15 +23,13 @@ A powerful application that automatically translates video content into differen
 - **Environment Management**: python-dotenv
 - **Frontend**: HTML, CSS (Bootstrap)
 
-## Getting Started
+### Getting Started 🚀
 
 ### Prerequisites
 
 - Python 3.10 or higher
 - FFmpeg installed on your system
 - API keys for Deepgram, DeepL, and ElevenLabs
-
-### Getting Started 🚀
 
 1. Clone the repository
    ```
