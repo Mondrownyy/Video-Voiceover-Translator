@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Voiceover Translator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        .dropzone {
+            transition: all 0.3s ease;
+        }
+        .dropzone.active {
+            border-color: #8B5CF6;
+            background-color: rgba(139, 92, 246, 0.1);
+        }
+        .loader {
+            border-top-color: #8B5CF6;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .processing-steps li {
+            transition: all 0.3s ease;
+        }
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem top 50%;
+            background-size: 0.65rem auto;
+            padding-right: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="mb-10">
+            <h1 class="text-4xl font-bold text-center text-purple-400 mb-2">Video Voiceover Translator</h1>
+            <p class="text-gray-400 text-center">Upload your video and get a translated voiceover in minutes!</p>
+        </header>
+
+        <main>
+            <div id="upload-section" class="block">
+                <div id="dropzone" class="dropzone border-2 border-gray-700 border-dashed rounded-xl p-10 text-center cursor-pointer hover:bg-gray-800">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-purple-500 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">Drag & Drop your video here</h2>
+                    <p class="text-gray-400 mb-4">or click to browse files</p>
+                    <input type="file" id="file-input" class="hidden" accept="video/*">
+                    <button id="browse-button" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Browse Files
+                    </button>
+                </div>
+
+                <div class="mt-6">
+                    <label for="language-select" class="block text-sm font-medium text-gray-300 mb-2">
+                        Select target language:
+                    </label>
+                    <select id="language-select" class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        {% for language, code in languages.items() %}
+                        <option value="{{ language }}">{{ language }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button id="upload-button" class="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-arrow-right mr-2"></i> Start Translation
+                </button>
+            </div>
+
+            <div id="processing-section" class="hidden">
+                <div class="bg-gray-800 rounded-xl p-8 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-cogs text-purple-500 mr-2"></i> 
+                        Processing your video
+                    </h2>
+                    
+                    <div class="relative pt-1 mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <span id="progress-percentage" class="text-xs font-semibold inline-block text-purple-400">
+                                    0%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-700">
+                            <div id="progress-bar" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <ul class="processing-steps space-y-3 mb-6">
+                        <li id="step-extract" class="flex items-center text-gray-400">
+                            <span class="step-indicator mr-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-500">
+                                <i class="fas fa-file-audio"></i>
+                            </span>
+                            <span>Extracting audio</span>
+                        </li>
+                        <li id="step-transcribe" class="flex items-center text-gray-400">
+                            <span class="step-indicator mr-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-500">
+                                <i class="fas fa-file-alt"></i>
+                            </span>
+                            <span>Transcribing speech to text</span>
+                        </li>
+                        <li id="step-translate" class="flex items-center text-gray-400">
+                            <span class="step-indicator mr-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-500">
+                                <i class="fas fa-language"></i>
+                            </span>
+                            <span>Translating content</span>
+                        </li>
+                        <li id="step-tts" class="flex items-center text-gray-400">
+                            <span class="step-indicator mr-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-500">
+                                <i class="fas fa-microphone"></i>
+                            </span>
+                            <span>Generating speech</span>
+                        </li>
+                        <li id="step-adjust" class="flex items-center text-gray-400">
+                            <span class="step-indicator mr-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-500">
+                                <i class="fas fa-sliders-h"></i>
+                            </span>
+                            <span>Adjusting audio speed</span>
+                        </li>
+                        <li id="step-replace" class="flex items-center text-gray-400">
+                            <span class="step-indicator mr-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-500">
+                                <i class="fas fa-film"></i>
+                            </span>
+                            <span>Merging audio with video</span>
+                        </li>
+                    </ul>
+
+                    <div id="processing-info" class="text-center text-gray-400 mt-4">
+                        <div class="inline-block">
+                            <div class="loader mr-2 w-6 h-6 border-2 rounded-full border-t-2"></div>
+                        </div>
+                        <p>Please wait while we process your video. This may take several minutes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-section" class="hidden">
+                <div class="bg-gray-800 rounded-xl p-8 shadow-lg">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                            Processing Complete!
+                        </h2>
+                        <button id="new-translation-button" class="text-purple-400 hover:text-purple-300 transition">
+                            <i class="fas fa-plus mr-1"></i> New Translation
+                        </button>
+                    </div>
+
+                    <div class="video-preview mb-6">
+                        <video id="result-video" controls class="w-full rounded-lg shadow-lg">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <a id="download-link" href="#" download class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition flex items-center">
+                            <i class="fas fa-download mr-2"></i> Download Translated Video
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="error-section" class="hidden">
+                <div class="bg-red-900/30 border border-red-700 rounded-xl p-8 shadow-lg">
+                    <div class="flex items-start mb-4">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-lg font-medium text-red-300">Processing Error</h3>
+                            <div class="mt-2">
+                                <p id="error-message" class="text-sm text-red-200">
+                                    Something went wrong during the translation process.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-center mt-4">
+                        <button id="try-again-button" class="bg-red-700 hover:bg-red-800 text-white font-semibold py-2 px-4 rounded-lg transition">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            const browseButton = document.getElementById('browse-button');
+            const uploadButton = document.getElementById('upload-button');
+            const languageSelect = document.getElementById('language-select');
+            
+            if (languageSelect) {
+                languageSelect.addEventListener('mousedown', function(e) {
+                    if (this.options && this.options.length > 5) {
+                        e.preventDefault();
+                        
+                        const customDropdown = document.createElement('div');
+                        customDropdown.className = 'absolute z-50 bg-gray-800 border border-gray-700 rounded-lg mt-1 w-full max-h-60 overflow-y-auto';
+                        customDropdown.style.top = (this.offsetHeight + this.offsetTop) + 'px';
+                        customDropdown.style.left = this.offsetLeft + 'px';
+                        customDropdown.style.width = this.offsetWidth + 'px';
+                        
+                        Array.from(this.options).forEach(option => {
+                            const optionElement = document.createElement('div');
+                            optionElement.className = 'px-4 py-2 hover:bg-gray-700 cursor-pointer';
+                            optionElement.textContent = option.textContent;
+                            optionElement.dataset.value = option.value;
+                            
+                            if (option.selected) {
+                                optionElement.classList.add('bg-purple-600');
+                            }
+                            
+                            optionElement.addEventListener('click', () => {
+                                this.value = option.value;
+                                customDropdown.remove();
+                                
+                                this.dispatchEvent(new Event('change'));
+                            });
+                            
+                            customDropdown.appendChild(optionElement);
+                        });
+                        
+                        document.body.appendChild(customDropdown);
+                        
+                        document.addEventListener('click', function closeDropdown(e) {
+                            if (!customDropdown.contains(e.target) && e.target !== languageSelect) {
+                                customDropdown.remove();
+                                document.removeEventListener('click', closeDropdown);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            const uploadSection = document.getElementById('upload-section');
+            const processingSection = document.getElementById('processing-section');
+            const resultSection = document.getElementById('result-section');
+            const errorSection = document.getElementById('error-section');
+
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercentage = document.getElementById('progress-percentage');
+            
+            const resultVideo = document.getElementById('result-video');
+            const downloadLink = document.getElementById('download-link');
+            const errorMessage = document.getElementById('error-message');
+            
+            const newTranslationButton = document.getElementById('new-translation-button');
+            const tryAgainButton = document.getElementById('try-again-button');
+
+            const steps = [
+                'step-extract',
+                'step-transcribe',
+                'step-translate',
+                'step-tts',
+                'step-adjust',
+                'step-replace'
+            ];
+
+            let selectedFile = null;
+            let sessionId = null;
+            
+            function showSection(section) {
+                uploadSection.classList.add('hidden');
+                processingSection.classList.add('hidden');
+                resultSection.classList.add('hidden');
+                errorSection.classList.add('hidden');
+                
+                section.classList.remove('hidden');
+            }
+            
+            function resetProgress() {
+                progressBar.style.width = '0%';
+                progressPercentage.textContent = '0%';
+                
+                steps.forEach(stepId => {
+                    const step = document.getElementById(stepId);
+                    step.classList.remove('text-green-400', 'text-yellow-400');
+                    step.classList.add('text-gray-400');
+                    
+                    const indicator = step.querySelector('.step-indicator');
+                    indicator.classList.remove('border-green-500', 'bg-green-500', 'border-yellow-500', 'bg-yellow-500');
+                    indicator.classList.add('border-gray-500');
+                });
+            }
+            
+            function updateProgress(completed) {
+                const progress = Math.min(Math.floor(completed), 100);
+                progressBar.style.width = `${progress}%`;
+                progressPercentage.textContent = `${progress}%`;
+                
+                const completedSteps = Math.floor((progress / 100) * steps.length);
+                
+                steps.forEach((stepId, index) => {
+                    const step = document.getElementById(stepId);
+                    const indicator = step.querySelector('.step-indicator');
+                    
+                    if (index < completedSteps) {
+                        step.classList.remove('text-gray-400', 'text-yellow-400');
+                        step.classList.add('text-green-400');
+                        
+                        indicator.classList.remove('border-gray-500', 'border-yellow-500');
+                        indicator.classList.add('border-green-500', 'bg-green-500/20');
+                    } else if (index === completedSteps) {
+                        step.classList.remove('text-gray-400', 'text-green-400');
+                        step.classList.add('text-yellow-400');
+                        
+                        indicator.classList.remove('border-gray-500', 'border-green-500');
+                        indicator.classList.add('border-yellow-500', 'bg-yellow-500/20');
+                    }
+                });
+            }
+            
+            function uploadFile() {
+                if (!selectedFile) return;
+                
+                const formData = new FormData();
+                formData.append('video', selectedFile);
+                formData.append('language', languageSelect.value);
+                
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+                    
+                    sessionId = data.session_id;
+                    showSection(processingSection);
+                    resetProgress();
+                    startProcessing(sessionId, selectedFile.name);
+                })
+                .catch(error => {
+                    showError('Error uploading file: ' + error.message);
+                });
+            }
+            
+            function startProcessing(sessionId, originalName) {
+                fetch(`/process/${sessionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: `${sessionId}${selectedFile.name.substring(selectedFile.name.lastIndexOf('.'))}`,
+                        target_lang: languageSelect.value,
+                        original_name: originalName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+                    
+                    checkStatus(sessionId);
+                })
+                .catch(error => {
+                    showError('Error processing file: ' + error.message);
+                });
+                
+                checkStatus(sessionId);
+            }
+            
+            function checkStatus(sessionId) {
+                fetch(`/status/${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        showResults(data.output);
+                    } else {
+                        updateProgress(data.progress);
+                        setTimeout(() => checkStatus(sessionId), 1000);
+                    }
+                })
+                .catch(error => {
+                    showError('Error checking status: ' + error.message);
+                });
+            }
+            
+            function showResults(outputPath) {
+                resultVideo.src = outputPath;
+                downloadLink.href = outputPath;
+                downloadLink.download = `translated_video.mp4`;
+                
+                showSection(resultSection);
+            }
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                showSection(errorSection);
+            }
+            
+            function resetForm() {
+                selectedFile = null;
+                sessionId = null;
+                
+                fileInput.value = '';
+                uploadButton.disabled = true;
+                resetProgress();
+                
+                showSection(uploadSection);
+            }
+            
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('active');
+            });
+            
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('active');
+            });
+            
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('active');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    selectedFile = e.dataTransfer.files[0];
+                    
+                    if (selectedFile.type.startsWith('video/')) {
+                        dropzone.querySelector('h2').textContent = selectedFile.name;
+                        uploadButton.disabled = false;
+                    } else {
+                        selectedFile = null;
+                        alert('Please select a video file.');
+                    }
+                }
+            });
+            
+            browseButton.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    selectedFile = fileInput.files[0];
+                    
+                    if (selectedFile.type.startsWith('video/')) {
+                        dropzone.querySelector('h2').textContent = selectedFile.name;
+                        uploadButton.disabled = false;
+                    } else {
+                        selectedFile = null;
+                        alert('Please select a video file.');
+                    }
+                }
+            });
+            
+            uploadButton.addEventListener('click', uploadFile);
+            newTranslationButton.addEventListener('click', resetForm);
+            tryAgainButton.addEventListener('click', resetForm);
+        });
+    </script>
+</body>
+</html>
