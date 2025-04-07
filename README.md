@@ -23,7 +23,7 @@ A powerful application that automatically translates video content into differen
 - **Environment Management**: python-dotenv
 - **Frontend**: HTML, CSS (Bootstrap)
 
-### Getting Started 🚀
+## Getting Started 🚀
 
 ### Prerequisites
 
